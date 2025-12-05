@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}펫시터 대시보드{% endblock %}
+{% block content %}
+<h1>안녕하세요, {{ session.name }}님</h1>
+
+<div class="card">
+    <h3>예약 현황</h3>
+    {% if bookings %}
+        <table>
+            <thead>
+                <tr>
+                    <th>기간</th>
+                    <th>반려동물</th>
+                    <th>보호자</th>
+                    <th>요금</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for booking in bookings %}
+                <tr>
+                    <td>{{ booking.start_date }} ~ {{ booking.end_date }}</td>
+                    <td>{{ booking.pet_name }} ({{ booking.species }})</td>
+                    <td>{{ booking.owner_name }}</td>
+                    <td class="price">{{ "{:,}".format(booking.total_fee|int) }}원</td>
+                    <td><span class="status status-{{ booking.status|lower }}">{{ booking.status }}</span></td>
+                    <td>
+                        <div class="actions">
+                            {% if booking.status == 'Pending' %}
+                                <a href="{{ url_for('update_booking', booking_id=booking.booking_id, status='Confirmed') }}" class="btn btn-success btn-sm">수락</a>
+                                <a href="{{ url_for('update_booking', booking_id=booking.booking_id, status='Cancelled') }}" class="btn btn-danger btn-sm">거절</a>
+                            {% elif booking.status == 'Confirmed' %}
+                                <a href="{{ url_for('update_booking', booking_id=booking.booking_id, status='Completed') }}" class="btn btn-success btn-sm">완료</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">예약이 없습니다.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}주문{% endblock %}
+{% block content %}
+<div class="card" style="max-width: 500px;">
+    <h2>{{ product.name }}</h2>
+    <p>{{ product.shop_name }}</p>
+    <p class="price" style="font-size: 1.25rem;">{{ "{:,}".format(product.price|int) }}원</p>
+    <p>재고: {{ product.stock_quantity }}개</p>
+    
+    <form method="POST" style="margin-top: 1rem;">
+        <div class="form-group">
+            <label>수량</label>
+            <input type="number" name="quantity" value="1" min="1" max="{{ product.stock_quantity }}" required>
+        </div>
+        <div class="form-group">
+            <label>배송지 주소</label>
+            <textarea name="address" rows="2" required></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary">주문하기</button>
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">취소</a>
+    </form>
+</div>
+{% endblock %}
