@@ -1,6 +1,4 @@
--- 실행 방법: psql -U postgres -f init_database.sql
 
--- 기존 데이터베이스 삭제 후 재생성
 DROP DATABASE IF EXISTS pet_care_system;
 CREATE DATABASE pet_care_system;
 \c pet_care_system
