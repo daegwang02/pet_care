@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}내 예약{% endblock %}
+{% block content %}
+<h2>내 예약 목록</h2>
+
+<h3>수의사 예약</h3>
+{% if appointments %}
+<table>
+    <tr><th>날짜</th><th>시간</th><th>반려동물</th><th>병원</th><th>수의사</th><th>상태</th></tr>
+    {% for a in appointments %}
+    <tr>
+        <td>{{ a.appointment_date }}</td>
+        <td>{{ a.appointment_time }}</td>
+        <td>{{ a.pet_name }}</td>
+        <td>{{ a.clinic_name }}</td>
+        <td>{{ a.vet_name }}</td>
+        <td>{{ a.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>수의사 예약이 없습니다.</p>
+{% endif %}
+
+<h3>펫시터 예약</h3>
+{% if bookings %}
+<table>
+    <tr><th>기간</th><th>반려동물</th><th>펫시터</th><th>시간</th><th>요금</th><th>상태</th></tr>
+    {% for b in bookings %}
+    <tr>
+        <td>{{ b.start_date }} ~ {{ b.end_date }}</td>
+        <td>{{ b.pet_name }}</td>
+        <td>{{ b.sitter_name }}</td>
+        <td>{{ b.total_hours }}시간</td>
+        <td>{{ "{:,.0f}".format(b.total_fee) }}원</td>
+        <td>{{ b.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>펫시터 예약이 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}" class="btn">돌아가기</a>
+{% endblock %}

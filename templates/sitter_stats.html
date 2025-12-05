@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}내 통계{% endblock %}
+{% block content %}
+<h2>월별 서비스 통계</h2>
+
+<p>현재 평점: ★ {{ "%.1f"|format(avg_rating or 0) }}</p>
+
+{% if stats %}
+<table>
+    <tr><th>월</th><th>서비스</th><th>시간</th><th>수입</th></tr>
+    {% for s in stats %}
+    <tr>
+        <td>{{ s.month.strftime('%Y-%m') if s.month else '-' }}</td>
+        <td>{{ s.total_bookings }}건</td>
+        <td>{{ s.total_hours or 0 }}시간</td>
+        <td>{{ "{:,.0f}".format(s.total_revenue or 0) }}원</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>통계 데이터가 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

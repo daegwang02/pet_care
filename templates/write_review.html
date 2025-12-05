@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}리뷰 작성{% endblock %}
+{% block content %}
+<h2>리뷰 작성</h2>
+
+{% if vets or sitters %}
+<form method="POST">
+    <label>리뷰 대상 선택</label>
+    
+    {% if vets %}
+    <p><strong>수의사</strong></p>
+    {% for v in vets %}
+    <label>
+        <input type="radio" name="reviewee_id" value="{{ v.user_id }}" onclick="document.getElementById('review_type').value='Veterinarian'" required>
+        {{ v.name }} ({{ v.clinic_name }})
+    </label><br>
+    {% endfor %}
+    {% endif %}
+    
+    {% if sitters %}
+    <p><strong>펫시터</strong></p>
+    {% for s in sitters %}
+    <label>
+        <input type="radio" name="reviewee_id" value="{{ s.user_id }}" onclick="document.getElementById('review_type').value='PetSitter'" required>
+        {{ s.name }} ({{ s.service_area }})
+    </label><br>
+    {% endfor %}
+    {% endif %}
+    
+    <input type="hidden" name="review_type" id="review_type" value="">
+    
+    <label>평점</label>
+    <select name="rating" required>
+        <option value="5">★★★★★ (5점)</option>
+        <option value="4">★★★★☆ (4점)</option>
+        <option value="3">★★★☆☆ (3점)</option>
+        <option value="2">★★☆☆☆ (2점)</option>
+        <option value="1">★☆☆☆☆ (1점)</option>
+    </select>
+    
+    <label>후기</label>
+    <textarea name="comment" rows="4" required></textarea>
+    
+    <button type="submit" class="btn">리뷰 등록</button>
+</form>
+{% else %}
+<p>리뷰 작성 가능한 대상이 없습니다. (완료된 예약만 리뷰 가능)</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

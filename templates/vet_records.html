@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}진료 기록{% endblock %}
+{% block content %}
+<h2>진료 기록 검색</h2>
+
+<form method="GET" style="margin-bottom:20px;">
+    <input type="text" name="search" placeholder="반려동물 이름" value="{{ search }}">
+    <button type="submit" class="btn">검색</button>
+</form>
+
+{% if records %}
+<table>
+    <tr><th>날짜</th><th>반려동물</th><th>종</th><th>보호자</th><th>진단</th><th>치료</th></tr>
+    {% for r in records %}
+    <tr>
+        <td>{{ r.record_date.strftime('%Y-%m-%d') }}</td>
+        <td>{{ r.pet_name }}</td>
+        <td>{{ r.species }}</td>
+        <td>{{ r.owner_name }}</td>
+        <td>{{ r.diagnosis }}</td>
+        <td>{{ r.treatment or '-' }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>진료 기록이 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

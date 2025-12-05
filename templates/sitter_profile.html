@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}프로필 수정{% endblock %}
+{% block content %}
+<h2>프로필 수정</h2>
+
+<form method="POST">
+    <label>시간당 요금 (원)</label>
+    <input type="number" name="hourly_rate" value="{{ sitter.hourly_rate }}" required>
+    
+    <label>경력 (년)</label>
+    <input type="number" name="experience_years" value="{{ sitter.experience_years }}" required>
+    
+    <label>돌봄 가능 동물</label>
+    <input type="text" name="available_pets" value="{{ sitter.available_pets }}" placeholder="예: Dog, Cat">
+    
+    <label>서비스 지역</label>
+    <input type="text" name="service_area" value="{{ sitter.service_area }}" placeholder="예: 서울 강남구">
+    
+    <button type="submit" class="btn">저장</button>
+</form>
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

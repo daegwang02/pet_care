@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}펫샵 대시보드{% endblock %}
+{% block content %}
+<h1>{{ shop.shop_name if shop else '펫샵' }}</h1>
+
+<div class="grid">
+    <div class="card">
+        <h3>상품 현황</h3>
+        <p>총 {{ products|length }}개 상품</p>
+        <a href="{{ url_for('add_product') }}" class="btn btn-primary btn-sm">상품 등록</a>
+    </div>
+    
+    <div class="card">
+        <h3>재고 부족 상품</h3>
+        {% set low_stock = products|selectattr('stock_quantity', 'lt', 10)|list %}
+        {% if low_stock %}
+            {% for p in low_stock[:3] %}
+                <p>{{ p.name }} - {{ p.stock_quantity }}개 
+                    <a href="{{ url_for('update_stock', product_id=p.product_id) }}" class="btn btn-sm">수정</a>
+                </p>
+            {% endfor %}
+        {% else %}
+            <p>없음</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>메뉴</h3>
+    <div class="actions">
+        <a href="{{ url_for('add_product') }}" class="btn btn-primary">상품 등록</a>
+        <a href="{{ url_for('shop_stats') }}" class="btn btn-secondary">판매 통계</a>
+    </div>
+</div>
+
+<div class="card">
+    <h3>최근 주문</h3>
+    {% if orders %}
+        <table>
+            <thead>
+                <tr>
+                    <th>주문번호</th>
+                    <th>주문자</th>
+                    <th>금액</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders %}
+                <tr>
+                    <td><a href="{{ url_for('order_detail', order_id=order.order_id) }}">#{{ order.order_id }}</a></td>
+                    <td>{{ order.buyer_name }}</td>
+                    <td class="price">{{ "{:,}".format(order.total_amount|int) }}원</td>
+                    <td><span class="status status-{{ order.status|lower }}">{{ order.status }}</span></td>
+                    <td>
+                        <div class="actions">
+                            {% if order.status == 'Pending' %}
+                                <a href="{{ url_for('update_order', order_id=order.order_id, status='Processing') }}" class="btn btn-success btn-sm">처리</a>
+                            {% elif order.status == 'Processing' %}
+                                <a href="{{ url_for('update_order', order_id=order.order_id, status='Shipped') }}" class="btn btn-success btn-sm">배송</a>
+                            {% elif order.status == 'Shipped' %}
+                                <a href="{{ url_for('update_order', order_id=order.order_id, status='Delivered') }}" class="btn btn-success btn-sm">완료</a>
+                            {% endif %}
+                            {% if order.status not in ['Cancelled', 'Delivered'] %}
+                                <a href="{{ url_for('update_order', order_id=order.order_id, status='Cancelled') }}" class="btn btn-danger btn-sm">취소</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">주문이 없습니다.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>상품 목록</h3>
+    {% if products %}
+        <table>
+            <thead>
+                <tr><th>상품명</th><th>카테고리</th><th>가격</th><th>재고</th><th>관리</th></tr>
+            </thead>
+            <tbody>
+                {% for p in products %}
+                <tr>
+                    <td>{{ p.name }}</td>
+                    <td>{{ p.category }}</td>
+                    <td>{{ "{:,}".format(p.price|int) }}원</td>
+                    <td>{{ p.stock_quantity }}개</td>
+                    <td><a href="{{ url_for('update_stock', product_id=p.product_id) }}" class="btn btn-sm">재고 수정</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+</div>
+{% endblock %}

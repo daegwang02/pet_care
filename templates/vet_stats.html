@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}월별 통계{% endblock %}
+{% block content %}
+<h2>월별 진료 통계</h2>
+
+<p>현재 평점: ★ {{ "%.1f"|format(avg_rating or 0) }}</p>
+
+{% if stats %}
+<table>
+    <tr><th>월</th><th>총 예약</th><th>완료</th><th>취소</th></tr>
+    {% for s in stats %}
+    <tr>
+        <td>{{ s.month.strftime('%Y-%m') if s.month else '-' }}</td>
+        <td>{{ s.total }}건</td>
+        <td>{{ s.completed }}건</td>
+        <td>{{ s.cancelled }}건</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>통계 데이터가 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

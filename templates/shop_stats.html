@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}판매 통계{% endblock %}
+{% block content %}
+<h2>판매 통계</h2>
+
+<h3>월별 매출</h3>
+{% if monthly %}
+<table>
+    <tr><th>월</th><th>주문수</th><th>매출</th></tr>
+    {% for m in monthly %}
+    <tr>
+        <td>{{ m.month.strftime('%Y-%m') if m.month else '-' }}</td>
+        <td>{{ m.order_count }}건</td>
+        <td>{{ "{:,.0f}".format(m.revenue or 0) }}원</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>매출 데이터가 없습니다.</p>
+{% endif %}
+
+<h3>베스트셀러</h3>
+{% if bestsellers %}
+<table>
+    <tr><th>순위</th><th>상품명</th><th>판매량</th></tr>
+    {% for b in bestsellers %}
+    <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ b.name }}</td>
+        <td>{{ b.sold }}개</td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>판매 데이터가 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}

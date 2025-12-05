@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}수의사 대시보드{% endblock %}
+{% block content %}
+<h1>안녕하세요, {{ session.name }} 선생님</h1>
+
+<div class="card">
+    <h3>오늘의 예약</h3>
+    {% if appointments %}
+        <table>
+            <thead>
+                <tr>
+                    <th>시간</th>
+                    <th>환자</th>
+                    <th>보호자</th>
+                    <th>연락처</th>
+                    <th>상태</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for appt in appointments %}
+                <tr>
+                    <td>{{ appt.appointment_time }}</td>
+                    <td>{{ appt.pet_name }} ({{ appt.species }})</td>
+                    <td>{{ appt.owner_name }}</td>
+                    <td>{{ appt.owner_phone }}</td>
+                    <td><span class="status status-{{ appt.status|lower }}">{{ appt.status }}</span></td>
+                    <td>
+                        <div class="actions">
+                            {% if appt.status == 'Pending' %}
+                                <a href="{{ url_for('update_appointment', appointment_id=appt.appointment_id, status='Confirmed') }}" class="btn btn-success btn-sm">확정</a>
+                            {% endif %}
+                            {% if appt.status == 'Confirmed' %}
+                                <a href="{{ url_for('update_appointment', appointment_id=appt.appointment_id, status='Completed') }}" class="btn btn-success btn-sm">완료</a>
+                                <a href="{{ url_for('add_medical_record', appointment_id=appt.appointment_id) }}" class="btn btn-primary btn-sm">기록</a>
+                            {% endif %}
+                            {% if appt.status != 'Cancelled' and appt.status != 'Completed' %}
+                                <a href="{{ url_for('update_appointment', appointment_id=appt.appointment_id, status='Cancelled') }}" class="btn btn-danger btn-sm">취소</a>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p class="empty">오늘 예약이 없습니다.</p>
+    {% endif %}
+</div>
+
+<div class="card">
+    <h3>메뉴</h3>
+    <div class="actions">
+        <a href="{{ url_for('vet_appointments') }}" class="btn btn-secondary">예약 조회</a>
+        <a href="{{ url_for('vet_records') }}" class="btn btn-secondary">진료 기록</a>
+        <a href="{{ url_for('vet_stats') }}" class="btn btn-secondary">월별 통계</a>
+        <a href="{{ url_for('vet_reviews') }}" class="btn btn-secondary">내 리뷰</a>
+    </div>
+</div>
+{% endblock %}

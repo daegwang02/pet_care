@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}재고 수정{% endblock %}
+{% block content %}
+<h2>재고 수정</h2>
+
+<p><strong>상품:</strong> {{ product.name }}</p>
+<p><strong>카테고리:</strong> {{ product.category }}</p>
+<p><strong>현재 재고:</strong> {{ product.stock_quantity }}개</p>
+
+<form method="POST">
+    <label>새 재고 수량</label>
+    <input type="number" name="stock" value="{{ product.stock_quantity }}" min="0" required>
+    
+    <button type="submit" class="btn">저장</button>
+</form>
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}
