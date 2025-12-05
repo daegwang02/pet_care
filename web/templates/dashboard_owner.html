@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}대시보드{% endblock %}
+{% block content %}
+<h1>안녕하세요, {{ session.name }}님</h1>
+
+<div class="grid">
+    <div class="card">
+        <h3>내 반려동물</h3>
+        {% if pets %}
+            {% for pet in pets %}
+                <p>{{ pet.name }} ({{ pet.species }})</p>
+            {% endfor %}
+            <a href="{{ url_for('pets') }}" class="btn btn-secondary btn-sm">전체 보기</a>
+        {% else %}
+            <p class="empty">등록된 반려동물이 없습니다.</p>
+            <a href="{{ url_for('add_pet') }}" class="btn btn-primary btn-sm">등록하기</a>
+        {% endif %}
+    </div>
+    
+    <div class="card">
+        <h3>최근 예약</h3>
+        {% if appointments %}
+            {% for appt in appointments %}
+                <p>
+                    {{ appt.appointment_date }} - {{ appt.pet_name }}
+                    <span class="status status-{{ appt.status|lower }}">{{ appt.status }}</span>
+                </p>
+            {% endfor %}
+        {% else %}
+            <p class="empty">예약 내역이 없습니다.</p>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <h3>메뉴</h3>
+    <div class="actions">
+        <a href="{{ url_for('add_pet') }}" class="btn btn-primary">반려동물 등록</a>
+        <a href="{{ url_for('vets') }}" class="btn btn-secondary">수의사</a>
+        <a href="{{ url_for('sitters') }}" class="btn btn-secondary">펫시터</a>
+        <a href="{{ url_for('products') }}" class="btn btn-secondary">쇼핑</a>
+    </div>
+</div>
+{% endblock %}

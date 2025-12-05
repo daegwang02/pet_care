@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}내 반려동물{% endblock %}
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+    <h1>내 반려동물</h1>
+    <a href="{{ url_for('add_pet') }}" class="btn btn-primary">등록하기</a>
+</div>
+
+{% if pets %}
+<div class="grid">
+    {% for pet in pets %}
+    <div class="card">
+        <h3>{{ pet.name }}</h3>
+        <p>종류: {{ pet.species }}</p>
+        <p>품종: {{ pet.breed or '-' }}</p>
+        <p>성별: {{ pet.gender }}</p>
+        <p>몸무게: {{ pet.weight or '-' }} kg</p>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <p class="empty">등록된 반려동물이 없습니다.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}펫케어{% endblock %}
+{% block content %}
+<div class="hero">
+    <h1>펫케어</h1>
+    <p>반려동물 관리 서비스</p>
+    <div class="actions" style="justify-content: center;">
+        <a href="{{ url_for('login') }}" class="btn btn-primary">로그인</a>
+        <a href="{{ url_for('register') }}" class="btn btn-secondary">회원가입</a>
+    </div>
+</div>
+
+<div class="grid">
+    <div class="card">
+        <h3>수의사 예약</h3>
+        <p>수의사 검색 및 예약</p>
+    </div>
+    <div class="card">
+        <h3>펫시터</h3>
+        <p>펫시터 검색 및 예약</p>
+    </div>
+    <div class="card">
+        <h3>펫샵</h3>
+        <p>사료, 용품, 장난감 구매</p>
+    </div>
+</div>
+{% endblock %}

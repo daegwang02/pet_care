@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}수의사{% endblock %}
+{% block content %}
+<h1>수의사</h1>
+
+{% if vets %}
+<div class="grid">
+    {% for vet in vets %}
+    <div class="card">
+        <h3>{{ vet.vet_name }}</h3>
+        <p>{{ vet.clinic_name }}</p>
+        <p>전문: {{ vet.specialty or '일반진료' }}</p>
+        <p>진료비: <span class="price">{{ "{:,}".format(vet.consultation_fee|int) }}원</span></p>
+        <p class="rating">평점: {{ "%.1f"|format(vet.avg_rating) }}</p>
+        <p>예약 가능: {{ vet.available_slots }}건</p>
+        <a href="{{ url_for('book_appointment', vet_id=vet.vet_id) }}" class="btn btn-primary btn-sm">예약하기</a>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="card">
+    <p class="empty">예약 가능한 수의사가 없습니다.</p>
+</div>
+{% endif %}
+{% endblock %}
