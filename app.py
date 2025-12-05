@@ -8,10 +8,10 @@ app.secret_key = os.urandom(24)
 
 DB_CONFIG = {
     'host': os.environ.get('DB_HOST', 'localhost'),
-    'port': os.environ.get('DB_PORT', '5433'),
+    'port': os.environ.get('DB_PORT', '5432'),
     'database': os.environ.get('DB_NAME', 'pet_care_system'),
     'user': os.environ.get('DB_USER', 'postgres'),
-    'password': os.environ.get('DB_PASSWORD', '029484')
+    'password': os.environ.get('DB_PASSWORD', '')
 }
 
 def get_db():
