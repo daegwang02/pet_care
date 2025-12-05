@@ -481,5 +481,297 @@ def update_order(order_id, status):
     
     return redirect(url_for('dashboard'))
 
+# 반려인 - 내 예약 목록
+@app.route('/my-appointments')
+def my_appointments():
+    if 'user_id' not in session or session['role'] != 'Pet Owner':
+        return redirect(url_for('login'))
+    
+    appointments = query('''
+        SELECT a.*, p.name as pet_name, u.name as vet_name, v.clinic_name
+        FROM Appointment a
+        JOIN Pet p ON a.pet_id = p.pet_id
+        JOIN Veterinarian v ON a.vet_id = v.vet_id
+        JOIN "User" u ON v.user_id = u.user_id
+        WHERE p.owner_id = %s
+        ORDER BY a.appointment_date DESC
+    ''', (session['user_id'],))
+    
+    bookings = query('''
+        SELECT b.*, p.name as pet_name, u.name as sitter_name
+        FROM Booking b
+        JOIN Pet p ON b.pet_id = p.pet_id
+        JOIN PetSitter ps ON b.sitter_id = ps.sitter_id
+        JOIN "User" u ON ps.user_id = u.user_id
+        WHERE p.owner_id = %s
+        ORDER BY b.start_date DESC
+    ''', (session['user_id'],))
+    
+    return render_template('my_appointments.html', appointments=appointments, bookings=bookings)
+
+# 반려인 - 리뷰 작성
+@app.route('/review/write', methods=['GET', 'POST'])
+def write_review():
+    if 'user_id' not in session or session['role'] != 'Pet Owner':
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        reviewee_id = request.form.get('reviewee_id')
+        rating = request.form.get('rating')
+        comment = request.form.get('comment')
+        review_type = request.form.get('review_type')
+        
+        try:
+            execute('''
+                INSERT INTO Review (reviewer_id, reviewee_id, rating, comment, review_type)
+                VALUES (%s, %s, %s, %s, %s)
+            ''', (session['user_id'], reviewee_id, rating, comment, review_type))
+            flash('리뷰가 등록되었습니다.')
+            return redirect(url_for('dashboard'))
+        except:
+            flash('리뷰 등록에 실패했습니다.')
+    
+    vets = query('''
+        SELECT DISTINCT v.vet_id, u.user_id, u.name, v.clinic_name
+        FROM Appointment a
+        JOIN Veterinarian v ON a.vet_id = v.vet_id
+        JOIN "User" u ON v.user_id = u.user_id
+        JOIN Pet p ON a.pet_id = p.pet_id
+        WHERE p.owner_id = %s AND a.status = 'Completed'
+    ''', (session['user_id'],))
+    
+    sitters = query('''
+        SELECT DISTINCT ps.sitter_id, u.user_id, u.name, ps.service_area
+        FROM Booking b
+        JOIN PetSitter ps ON b.sitter_id = ps.sitter_id
+        JOIN "User" u ON ps.user_id = u.user_id
+        JOIN Pet p ON b.pet_id = p.pet_id
+        WHERE p.owner_id = %s AND b.status = 'Completed'
+    ''', (session['user_id'],))
+    
+    return render_template('write_review.html', vets=vets, sitters=sitters)
+
+# 수의사 - 기간별 예약 조회
+@app.route('/vet/appointments')
+def vet_appointments():
+    if 'user_id' not in session or session['role'] != 'Veterinarian':
+        return redirect(url_for('login'))
+    
+    vet = query('SELECT vet_id FROM Veterinarian WHERE user_id = %s', (session['user_id'],), fetch_one=True)
+    period = request.args.get('period', 'today')
+    
+    if period == 'today':
+        date_filter = "a.appointment_date = CURRENT_DATE"
+    elif period == 'week':
+        date_filter = "a.appointment_date BETWEEN CURRENT_DATE AND CURRENT_DATE + 7"
+    else:
+        date_filter = "a.appointment_date >= DATE_TRUNC('month', CURRENT_DATE)"
+    
+    appointments = query(f'''
+        SELECT a.*, p.name as pet_name, p.species, u.name as owner_name
+        FROM Appointment a
+        JOIN Pet p ON a.pet_id = p.pet_id
+        JOIN "User" u ON p.owner_id = u.user_id
+        WHERE a.vet_id = %s AND {date_filter}
+        ORDER BY a.appointment_date, a.appointment_time
+    ''', (vet['vet_id'],))
+    
+    return render_template('vet_appointments.html', appointments=appointments, period=period)
+
+# 수의사 - 진료 기록 검색
+@app.route('/vet/records')
+def vet_records():
+    if 'user_id' not in session or session['role'] != 'Veterinarian':
+        return redirect(url_for('login'))
+    
+    vet = query('SELECT vet_id FROM Veterinarian WHERE user_id = %s', (session['user_id'],), fetch_one=True)
+    search = request.args.get('search', '')
+    
+    if search:
+        records = query('''
+            SELECT m.*, p.name as pet_name, p.species, u.name as owner_name
+            FROM MedicalRecord m
+            JOIN Pet p ON m.pet_id = p.pet_id
+            JOIN "User" u ON p.owner_id = u.user_id
+            WHERE m.vet_id = %s AND p.name ILIKE %s
+            ORDER BY m.record_date DESC
+        ''', (vet['vet_id'], f'%{search}%'))
+    else:
+        records = query('''
+            SELECT m.*, p.name as pet_name, p.species, u.name as owner_name
+            FROM MedicalRecord m
+            JOIN Pet p ON m.pet_id = p.pet_id
+            JOIN "User" u ON p.owner_id = u.user_id
+            WHERE m.vet_id = %s
+            ORDER BY m.record_date DESC LIMIT 20
+        ''', (vet['vet_id'],))
+    
+    return render_template('vet_records.html', records=records, search=search)
+
+# 수의사 - 월별 통계
+@app.route('/vet/stats')
+def vet_stats():
+    if 'user_id' not in session or session['role'] != 'Veterinarian':
+        return redirect(url_for('login'))
+    
+    vet = query('SELECT vet_id, avg_rating FROM Veterinarian WHERE user_id = %s', (session['user_id'],), fetch_one=True)
+    
+    stats = query('''
+        SELECT DATE_TRUNC('month', appointment_date) as month,
+               COUNT(*) as total,
+               SUM(CASE WHEN status = 'Completed' THEN 1 ELSE 0 END) as completed,
+               SUM(CASE WHEN status = 'Cancelled' THEN 1 ELSE 0 END) as cancelled
+        FROM Appointment
+        WHERE vet_id = %s
+        GROUP BY DATE_TRUNC('month', appointment_date)
+        ORDER BY month DESC LIMIT 6
+    ''', (vet['vet_id'],))
+    
+    return render_template('vet_stats.html', stats=stats, avg_rating=vet['avg_rating'])
+
+# 수의사 - 내 리뷰 보기
+@app.route('/vet/reviews')
+def vet_reviews():
+    if 'user_id' not in session or session['role'] != 'Veterinarian':
+        return redirect(url_for('login'))
+    
+    reviews = query('''
+        SELECT r.*, u.name as reviewer_name
+        FROM Review r
+        JOIN "User" u ON r.reviewer_id = u.user_id
+        WHERE r.reviewee_id = %s AND r.review_type = 'Veterinarian'
+        ORDER BY r.created_at DESC
+    ''', (session['user_id'],))
+    
+    return render_template('reviews.html', reviews=reviews, role='수의사')
+
+# 펫시터 - 내 통계
+@app.route('/sitter/stats')
+def sitter_stats():
+    if 'user_id' not in session or session['role'] != 'Pet Sitter':
+        return redirect(url_for('login'))
+    
+    sitter = query('SELECT sitter_id, avg_rating FROM PetSitter WHERE user_id = %s', (session['user_id'],), fetch_one=True)
+    
+    stats = query('''
+        SELECT DATE_TRUNC('month', start_date) as month,
+               COUNT(*) as total_bookings,
+               SUM(total_hours) as total_hours,
+               SUM(total_fee) as total_revenue
+        FROM Booking
+        WHERE sitter_id = %s AND status = 'Completed'
+        GROUP BY DATE_TRUNC('month', start_date)
+        ORDER BY month DESC LIMIT 6
+    ''', (sitter['sitter_id'],))
+    
+    return render_template('sitter_stats.html', stats=stats, avg_rating=sitter['avg_rating'])
+
+# 펫시터 - 내 리뷰 보기
+@app.route('/sitter/reviews')
+def sitter_reviews():
+    if 'user_id' not in session or session['role'] != 'Pet Sitter':
+        return redirect(url_for('login'))
+    
+    reviews = query('''
+        SELECT r.*, u.name as reviewer_name
+        FROM Review r
+        JOIN "User" u ON r.reviewer_id = u.user_id
+        WHERE r.reviewee_id = %s AND r.review_type = 'PetSitter'
+        ORDER BY r.created_at DESC
+    ''', (session['user_id'],))
+    
+    return render_template('reviews.html', reviews=reviews, role='펫시터')
+
+# 펫시터 - 프로필 수정
+@app.route('/sitter/profile', methods=['GET', 'POST'])
+def sitter_profile():
+    if 'user_id' not in session or session['role'] != 'Pet Sitter':
+        return redirect(url_for('login'))
+    
+    sitter = query('SELECT * FROM PetSitter WHERE user_id = %s', (session['user_id'],), fetch_one=True)
+    
+    if request.method == 'POST':
+        hourly = request.form.get('hourly_rate')
+        exp = request.form.get('experience_years')
+        pets = request.form.get('available_pets')
+        area = request.form.get('service_area')
+        
+        execute('''
+            UPDATE PetSitter SET hourly_rate = %s, experience_years = %s, 
+            available_pets = %s, service_area = %s WHERE user_id = %s
+        ''', (hourly, exp, pets, area, session['user_id']))
+        flash('프로필이 수정되었습니다.')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('sitter_profile.html', sitter=sitter)
+
+# 펫샵 - 재고 수정
+@app.route('/shop/stock/<int:product_id>', methods=['GET', 'POST'])
+def update_stock(product_id):
+    if 'user_id' not in session or session['role'] != 'Pet Shop Manager':
+        return redirect(url_for('login'))
+    
+    product = query('SELECT * FROM Product WHERE product_id = %s', (product_id,), fetch_one=True)
+    
+    if request.method == 'POST':
+        new_stock = request.form.get('stock')
+        execute('UPDATE Product SET stock_quantity = %s WHERE product_id = %s', (new_stock, product_id))
+        flash('재고가 수정되었습니다.')
+        return redirect(url_for('dashboard'))
+    
+    return render_template('update_stock.html', product=product)
+
+# 펫샵 - 주문 상세
+@app.route('/shop/order/<int:order_id>')
+def order_detail(order_id):
+    if 'user_id' not in session or session['role'] != 'Pet Shop Manager':
+        return redirect(url_for('login'))
+    
+    order = query('''
+        SELECT o.*, u.name as buyer_name, u.phone as buyer_phone
+        FROM Orders o
+        JOIN "User" u ON o.user_id = u.user_id
+        WHERE o.order_id = %s
+    ''', (order_id,), fetch_one=True)
+    
+    items = query('''
+        SELECT oi.*, p.name as product_name
+        FROM OrderItem oi
+        JOIN Product p ON oi.product_id = p.product_id
+        WHERE oi.order_id = %s
+    ''', (order_id,))
+    
+    return render_template('order_detail.html', order=order, items=items)
+
+# 펫샵 - 판매 통계
+@app.route('/shop/stats')
+def shop_stats():
+    if 'user_id' not in session or session['role'] != 'Pet Shop Manager':
+        return redirect(url_for('login'))
+    
+    shop = query('SELECT shop_id FROM PetShop WHERE manager_id = %s', (session['user_id'],), fetch_one=True)
+    
+    monthly = query('''
+        SELECT DATE_TRUNC('month', order_date) as month,
+               COUNT(*) as order_count,
+               SUM(total_amount) as revenue
+        FROM Orders
+        WHERE shop_id = %s AND status != 'Cancelled'
+        GROUP BY DATE_TRUNC('month', order_date)
+        ORDER BY month DESC LIMIT 6
+    ''', (shop['shop_id'],))
+    
+    bestsellers = query('''
+        SELECT p.name, SUM(oi.quantity) as sold
+        FROM OrderItem oi
+        JOIN Product p ON oi.product_id = p.product_id
+        JOIN Orders o ON oi.order_id = o.order_id
+        WHERE p.shop_id = %s AND o.status != 'Cancelled'
+        GROUP BY p.product_id, p.name
+        ORDER BY sold DESC LIMIT 5
+    ''', (shop['shop_id'],))
+    
+    return render_template('shop_stats.html', monthly=monthly, bestsellers=bestsellers)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
