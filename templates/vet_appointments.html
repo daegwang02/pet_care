@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}예약 조회{% endblock %}
+{% block content %}
+<h2>예약 조회</h2>
+
+<div style="margin-bottom:20px;">
+    <a href="?period=today" class="btn {% if period=='today' %}active{% endif %}">오늘</a>
+    <a href="?period=week" class="btn {% if period=='week' %}active{% endif %}">이번 주</a>
+    <a href="?period=month" class="btn {% if period=='month' %}active{% endif %}">이번 달</a>
+</div>
+
+{% if appointments %}
+<p>총 {{ appointments|length }}건</p>
+<table>
+    <thead>
+        <tr>
+            <th>날짜</th>
+            <th>시간</th>
+            <th>반려동물</th>
+            <th>종</th>
+            <th>보호자</th>
+            <th>상태</th>
+            <th>관리</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for a in appointments %}
+        <tr>
+            <td>{{ a.appointment_date }}</td>
+            <td>{{ a.appointment_time }}</td>
+            <td>{{ a.pet_name }}</td>
+            <td>{{ a.species }}</td>
+            <td>{{ a.owner_name }}</td>
+            <td><span class="status status-{{ a.status|lower }}">{{ a.status }}</span></td>
+            <td>
+                <div class="actions">
+                    {% if a.status == 'Pending' %}
+                        <a href="{{ url_for('update_appointment', appointment_id=a.appointment_id, status='Confirmed') }}" class="btn btn-success btn-sm">확정</a>
+                    {% endif %}
+                    {% if a.status == 'Confirmed' %}
+                        <a href="{{ url_for('update_appointment', appointment_id=a.appointment_id, status='Completed') }}" class="btn btn-success btn-sm">완료</a>
+                        <a href="{{ url_for('add_medical_record', appointment_id=a.appointment_id) }}" class="btn btn-primary btn-sm">기록</a>
+                    {% endif %}
+                    {% if a.status != 'Cancelled' and a.status != 'Completed' %}
+                        <a href="{{ url_for('update_appointment', appointment_id=a.appointment_id, status='Cancelled') }}" class="btn btn-danger btn-sm">취소</a>
+                    {% endif %}
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>해당 기간 예약이 없습니다.</p>
+{% endif %}
+
+<a href="{{ url_for('dashboard') }}">돌아가기</a>
+{% endblock %}
